@@ -56,7 +56,7 @@ pip install -r requirements.txt
 前往 [CWA Open Data 平台](https://opendata.cwa.gov.tw/) 申請 API Key，並設定環境變數：
 
 ```bash
-export CWA_API_KEY="your_api_key_here"
+export CWA_API_KEY="CWA-223C5412-50E5-418B-89EE-B6C402197BF8"
 ```
 
 ### 3. 啟動 App
