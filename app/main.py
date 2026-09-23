@@ -11,7 +11,7 @@ import datetime
 # 將專案根目錄加入路徑
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from app.utils.cwa_api import fetch_weather_forecast, get_cwa_imagery_urls, get_api_key
+from app.utils.cwa_api import fetch_weather_forecast, get_api_key
 from app.utils.db_helper import save_forecasts, load_forecasts
 from app.components.charts import render_temperature_chart
 from app.components.map import render_taiwan_map
@@ -145,10 +145,9 @@ def main():
     st.markdown("<br>", unsafe_allow_html=True)
 
     # 主分頁
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3 = st.tabs([
         "📈 氣溫趨勢圖", 
         "🗺️ 台灣天氣地圖 (Google Maps)", 
-        "🛰️ 衛星與雷達觀測", 
         "🗄️ SQLite 數據明細"
     ])
 
@@ -177,44 +176,8 @@ def main():
         map_obj = render_taiwan_map(final_df, style_key=map_style)
         st_folium(map_obj, width=1100, height=540)
 
-    # Tab 3: 衛星與雷達圖觀測
+    # Tab 3: SQLite 明細
     with tab3:
-        st.subheader("🛰️ 中央氣象署 (CWA) 官方即時氣象觀測圖資")
-        st.caption("自動串接 CWA 衛星雲圖、雷達迴波合成圖與即時累積雨量圖")
-        
-        img_dict = get_cwa_imagery_urls()
-        
-        sub_tab1, sub_tab2, sub_tab3 = st.tabs([
-            "📡 衛星雲圖 (Satellite)",
-            "🌧️ 雷達迴波圖 (Radar)",
-            "☔ 全台累積雨量圖 (Rainfall)"
-        ])
-        
-        cache_bust = datetime.datetime.now().strftime("%Y%m%d%H%M")
-        
-        with sub_tab1:
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown(f"#### 🛰️ {img_dict['satellite_infrared']['title']}")
-                st.info(img_dict['satellite_infrared']['desc'])
-                st.image(f"{img_dict['satellite_infrared']['url']}?v={cache_bust}", use_container_width=True)
-            with col2:
-                st.markdown(f"#### 🌍 {img_dict['satellite_vis']['title']}")
-                st.info(img_dict['satellite_vis']['desc'])
-                st.image(f"{img_dict['satellite_vis']['url']}?v={cache_bust}", use_container_width=True)
-                
-        with sub_tab2:
-            st.markdown(f"#### 🌩️ {img_dict['radar_composite']['title']}")
-            st.info(img_dict['radar_composite']['desc'])
-            st.image(f"{img_dict['radar_composite']['url']}?v={cache_bust}", use_container_width=True)
-
-        with sub_tab3:
-            st.markdown(f"#### 🌧️ {img_dict['rainfall_daily']['title']}")
-            st.info(img_dict['rainfall_daily']['desc'])
-            st.image(f"{img_dict['rainfall_daily']['url']}?v={cache_bust}", use_container_width=True)
-
-    # Tab 4: SQLite 明細
-    with tab4:
         st.subheader("🗄️ SQLite 資料庫即時查詢 (TemperatureForecasts)")
         st.dataframe(final_df, use_container_width=True)
         
@@ -228,7 +191,7 @@ def main():
         )
 
     st.markdown("---")
-    st.caption("💡 煥哥 AI × Data 24堂課實作專案 | Google Maps 地圖 x 獨立爬蟲 crawler.py x 衛星雷達觀測")
+    st.caption("💡 煥哥 AI × Data 24堂課實作專案 | Google Maps 地圖 x 獨立爬蟲 crawler.py x SQLite 資料庫")
 
 if __name__ == "__main__":
     main()
