@@ -32,8 +32,8 @@ def render_taiwan_map(df: pd.DataFrame) -> folium.Map:
     """
     創建全台氣溫分佈 Folium 地圖。
     """
-    # 台灣地理中心點
-    m = folium.Map(location=[23.7, 120.95], zoom_start=7, tiles="CartoDB dark_matter")
+    # 台灣地理中心點 (預設使用 OpenStreetMap 基礎底圖)
+    m = folium.Map(location=[23.7, 120.95], zoom_start=7, tiles="OpenStreetMap")
     
     if df.empty:
         return m
