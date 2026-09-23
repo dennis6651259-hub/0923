@@ -47,13 +47,19 @@ def get_temp_color(temp: float) -> str:
     else:
         return "red"
 
-def render_taiwan_map(df: pd.DataFrame, style_key: str = "Google Roadmap") -> folium.Map:
+def render_taiwan_map(df: pd.DataFrame, style_key: str = "Google Roadmap", **kwargs) -> folium.Map:
     """
     創建 Google Maps 風格的全台氣溫分佈 Folium 地圖。
     
     :param df: 包含氣溫的 DataFrame
     :param style_key: 地圖風格 ('Google Roadmap', 'Google Hybrid', 'Google Terrain', 'OpenStreetMap')
     """
+    # 如果 kwargs 傳入 style_name 或其他 key 名稱，亦能自動相容
+    if "map_style" in kwargs:
+        style_key = kwargs["map_style"]
+    elif "style_name" in kwargs:
+        style_key = kwargs["style_name"]
+
     # 預設以台灣中心點建構 Folium 地圖
     m = folium.Map(location=[23.7, 120.95], zoom_start=7, tiles=None)
     
