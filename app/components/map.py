@@ -1,5 +1,5 @@
 """
-map.py - Folium 地圖視覺化模組
+map.py - Google Maps 風格 Folium 地圖視覺化模組
 """
 
 import folium
@@ -17,6 +17,25 @@ CITY_COORDS = {
     '連江縣': (26.1505, 119.9499)
 }
 
+# Google Maps 地圖 Tiles 連結設定
+GOOGLE_TILES = {
+    "Google Roadmap": {
+        "url": "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+        "name": "Google Maps (標準街道圖)",
+        "attr": "Google Maps"
+    },
+    "Google Hybrid": {
+        "url": "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}",
+        "name": "Google Maps (衛星混合圖)",
+        "attr": "Google Maps Hybrid"
+    },
+    "Google Terrain": {
+        "url": "https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}",
+        "name": "Google Maps (地形圖)",
+        "attr": "Google Maps Terrain"
+    }
+}
+
 def get_temp_color(temp: float) -> str:
     """根據溫度傳回顏色碼"""
     if temp < 18:
@@ -28,51 +47,85 @@ def get_temp_color(temp: float) -> str:
     else:
         return "red"
 
-def render_taiwan_map(df: pd.DataFrame) -> folium.Map:
+def render_taiwan_map(df: pd.DataFrame, style_key: str = "Google Roadmap") -> folium.Map:
     """
-    創建全台氣溫分佈 Folium 地圖。
+    創建 Google Maps 風格的全台氣溫分佈 Folium 地圖。
+    
+    :param df: 包含氣溫的 DataFrame
+    :param style_key: 地圖風格 ('Google Roadmap', 'Google Hybrid', 'Google Terrain', 'OpenStreetMap')
     """
-    # 台灣地理中心點 (預設使用 OpenStreetMap 基礎底圖)
-    m = folium.Map(location=[23.7, 120.95], zoom_start=7, tiles="OpenStreetMap")
+    # 預設以台灣中心點建構 Folium 地圖
+    m = folium.Map(location=[23.7, 120.95], zoom_start=7, tiles=None)
     
-    if df.empty:
-        return m
-        
-    # 取最新一個時間區段或以縣市平均
-    latest_df = df.groupby("city").first().reset_index()
+    # 1. 建立預設 Google Maps 圖層
+    tile_info = GOOGLE_TILES.get(style_key, GOOGLE_TILES["Google Roadmap"])
     
-    for _, row in latest_df.iterrows():
-        city = row["city"]
-        min_t = row["minT"]
-        max_t = row["maxT"]
-        avg_t = (min_t + max_t) / 2
-        wx = row.get("weather", "")
-        pop = row.get("pop", 0)
-        
-        coords = CITY_COORDS.get(city)
-        if not coords:
-            continue
+    folium.TileLayer(
+        tiles=tile_info["url"],
+        attr=tile_info["attr"],
+        name=tile_info["name"],
+        overlay=False,
+        control=True
+    ).add_to(m)
+    
+    # 2. 加入其他 Google Maps 與 OpenStreetMap 圖層供使用者在右上方隨時切換
+    for k, v in GOOGLE_TILES.items():
+        if k != style_key:
+            folium.TileLayer(
+                tiles=v["url"],
+                attr=v["attr"],
+                name=v["name"],
+                overlay=False,
+                control=True
+            ).add_to(m)
             
-        color = get_temp_color(max_t)
+    folium.TileLayer(
+        tiles="OpenStreetMap",
+        name="OpenStreetMap (經典街道)",
+        overlay=False,
+        control=True
+    ).add_to(m)
+
+    if not df.empty:
+        # 取最新一個時間區段或以縣市為單位
+        latest_df = df.groupby("city").first().reset_index()
         
-        popup_html = f"""
-        <div style="font-family: Arial, sans-serif; font-size: 13px; width: 160px; color: #1e293b;">
-            <h4 style="margin: 0 0 5px 0; color: #0284c7;">📍 {city}</h4>
-            <b>🌤️ 天氣:</b> {wx}<br/>
-            <b>🌡️ 氣溫:</b> {min_t}°C ~ {max_t}°C<br/>
-            <b>💧 降雨機率:</b> {pop}%
-        </div>
-        """
-        
-        folium.CircleMarker(
-            location=coords,
-            radius=12,
-            popup=folium.Popup(popup_html, max_width=200),
-            tooltip=f"{city}: {min_t}°C ~ {max_t}°C ({wx})",
-            color=color,
-            fill=True,
-            fill_color=color,
-            fill_opacity=0.8
-        ).add_to(m)
-        
+        for _, row in latest_df.iterrows():
+            city = row["city"]
+            min_t = row["minT"]
+            max_t = row["maxT"]
+            wx = row.get("weather", "")
+            pop = row.get("pop", 0)
+            
+            coords = CITY_COORDS.get(city)
+            if not coords:
+                continue
+                
+            color = get_temp_color(max_t)
+            
+            popup_html = f"""
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; width: 170px; color: #0f172a; padding: 4px;">
+                <h4 style="margin: 0 0 6px 0; color: #1d4ed8; font-weight: 700;">📍 {city}</h4>
+                <div style="margin-bottom: 4px;"><b>🌤️ 天氣狀態:</b> {wx}</div>
+                <div style="margin-bottom: 4px;"><b>🌡️ 氣溫預報:</b> <span style="color:#dc2626; font-weight:bold;">{min_t}°C</span> ~ <span style="color:#b91c1c; font-weight:bold;">{max_t}°C</span></div>
+                <div><b>💧 降雨機率:</b> <span style="color:#0284c7; font-weight:bold;">{pop}%</span></div>
+            </div>
+            """
+            
+            # 建立地標 Marker
+            folium.CircleMarker(
+                location=coords,
+                radius=13,
+                popup=folium.Popup(popup_html, max_width=220),
+                tooltip=f"📍 {city}: {min_t}°C ~ {max_t}°C ({wx})",
+                color="#ffffff",
+                weight=2,
+                fill=True,
+                fill_color=color,
+                fill_opacity=0.85
+            ).add_to(m)
+            
+    # 加入右上方圖層切換選單 (LayerControl)
+    folium.LayerControl(position="topright").add_to(m)
+    
     return m

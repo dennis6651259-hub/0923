@@ -80,7 +80,7 @@ st.markdown("""
 def main():
     # 標頭區
     st.markdown('<h1 class="header-title">🌤️ 台灣天氣預報 AI × Data 儀表板</h1>', unsafe_allow_html=True)
-    st.markdown("##### 中央氣象署 (CWA) Open Data × SQLite 本地資料庫 × 衛星雷達圖資視覺化")
+    st.markdown("##### 中央氣象署 (CWA) Open Data × SQLite 本地資料庫 × Google Maps 衛星與即時圖資")
     st.markdown("---")
 
     # 側邊欄配置
@@ -147,7 +147,7 @@ def main():
     # 主分頁
     tab1, tab2, tab3, tab4 = st.tabs([
         "📈 氣溫趨勢圖", 
-        "🗺️ 全台氣溫地圖", 
+        "🗺️ 台灣天氣地圖 (Google Maps)", 
         "🛰️ 衛星與雷達觀測", 
         "🗄️ SQLite 數據明細"
     ])
@@ -158,11 +158,24 @@ def main():
         fig = render_temperature_chart(final_df, title=f"{selected_region} - {selected_city} 氣溫變化")
         st.plotly_chart(fig, use_container_width=True)
 
-    # Tab 2: 氣溫地圖
+    # Tab 2: Google Maps 風格氣溫地圖
     with tab2:
-        st.subheader("🗺️ 台灣各縣市即時氣溫分布圖")
-        map_obj = render_taiwan_map(final_df)
-        st_folium(map_obj, width=1100, height=520)
+        col_m1, col_m2 = st.columns([3, 1])
+        with col_m1:
+            st.subheader("🗺️ 台灣各縣市即時氣溫分布圖 (Google Maps 風格)")
+        with col_m2:
+            map_style = st.selectbox(
+                "地圖底圖風格",
+                ["Google Roadmap", "Google Hybrid", "Google Terrain", "OpenStreetMap"],
+                format_func=lambda x: {
+                    "Google Roadmap": "🗺️ Google Maps (標準街道)",
+                    "Google Hybrid": "🛰️ Google Maps (衛星混合)",
+                    "Google Terrain": "🏔️ Google Maps (地形圖)",
+                    "OpenStreetMap": "🌐 OpenStreetMap (經典)"
+                }.get(x, x)
+            )
+        map_obj = render_taiwan_map(final_df, style_key=map_style)
+        st_folium(map_obj, width=1100, height=540)
 
     # Tab 3: 衛星與雷達圖觀測
     with tab3:
@@ -215,7 +228,7 @@ def main():
         )
 
     st.markdown("---")
-    st.caption("💡 煥哥 AI × Data 24堂課實作專案 | 獨立爬蟲 crawler.py × 衛星雷達觀測 × CWA Open Data")
+    st.caption("💡 煥哥 AI × Data 24堂課實作專案 | Google Maps 地圖 x 獨立爬蟲 crawler.py x 衛星雷達觀測")
 
 if __name__ == "__main__":
     main()
