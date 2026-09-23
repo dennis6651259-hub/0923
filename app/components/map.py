@@ -1,5 +1,5 @@
 """
-map.py - Google Maps 風格 Folium 地圖視覺化模組
+map.py - Google Maps 風格與即時氣溫/天氣標章 Folium 地圖視覺化模組
 """
 
 import folium
@@ -36,32 +36,45 @@ GOOGLE_TILES = {
     }
 }
 
-def get_temp_color(temp: float) -> str:
-    """根據溫度傳回顏色碼"""
+def get_weather_icon(wx_text: str) -> str:
+    """根據天氣狀況文字回傳氣象 Emoji"""
+    if "晴" in wx_text and "多雲" not in wx_text:
+        return "☀️"
+    elif "晴" in wx_text and "多雲" in wx_text:
+        return "⛅"
+    elif "多雲" in wx_text or "陰" in wx_text:
+        return "☁️"
+    elif "雷" in wx_text:
+        return "🌩️"
+    elif "雨" in wx_text:
+        return "🌧️"
+    return "🌤️"
+
+def get_badge_bg(temp: float) -> str:
+    """根據最高氣溫回傳漸層背景色"""
     if temp < 18:
-        return "blue"
+        return "linear-gradient(135deg, #0284c7, #0369a1)"
     elif temp < 24:
-        return "green"
-    elif temp < 28:
-        return "orange"
+        return "linear-gradient(135deg, #10b981, #047857)"
+    elif temp < 29:
+        return "linear-gradient(135deg, #f59e0b, #d97706)"
     else:
-        return "red"
+        return "linear-gradient(135deg, #ef4444, #b91c1c)"
 
 def render_taiwan_map(df: pd.DataFrame, style_key: str = "Google Roadmap", **kwargs) -> folium.Map:
     """
-    創建 Google Maps 風格的全台氣溫分佈 Folium 地圖。
+    創建全台即時氣溫與天氣動態標章 Folium 地圖 (Google Maps 風格)。
     
-    :param df: 包含氣溫的 DataFrame
+    :param df: 包含氣溫與天氣的 DataFrame
     :param style_key: 地圖風格 ('Google Roadmap', 'Google Hybrid', 'Google Terrain', 'OpenStreetMap')
     """
-    # 如果 kwargs 傳入 style_name 或其他 key 名稱，亦能自動相容
     if "map_style" in kwargs:
         style_key = kwargs["map_style"]
     elif "style_name" in kwargs:
         style_key = kwargs["style_name"]
 
     # 預設以台灣中心點建構 Folium 地圖
-    m = folium.Map(location=[23.7, 120.95], zoom_start=7, tiles=None)
+    m = folium.Map(location=[23.7, 120.95], zoom_start=7.5, tiles=None)
     
     # 1. 建立預設 Google Maps 圖層
     tile_info = GOOGLE_TILES.get(style_key, GOOGLE_TILES["Google Roadmap"])
@@ -74,7 +87,7 @@ def render_taiwan_map(df: pd.DataFrame, style_key: str = "Google Roadmap", **kwa
         control=True
     ).add_to(m)
     
-    # 2. 加入其他 Google Maps 與 OpenStreetMap 圖層供使用者在右上方隨時切換
+    # 2. 加入其他 Google Maps 與 OpenStreetMap 圖層供隨時切換
     for k, v in GOOGLE_TILES.items():
         if k != style_key:
             folium.TileLayer(
@@ -93,7 +106,7 @@ def render_taiwan_map(df: pd.DataFrame, style_key: str = "Google Roadmap", **kwa
     ).add_to(m)
 
     if not df.empty:
-        # 取最新一個時間區段或以縣市為單位
+        # 取最新一個時間區段之縣市數據
         latest_df = df.groupby("city").first().reset_index()
         
         for _, row in latest_df.iterrows():
@@ -107,28 +120,52 @@ def render_taiwan_map(df: pd.DataFrame, style_key: str = "Google Roadmap", **kwa
             if not coords:
                 continue
                 
-            color = get_temp_color(max_t)
+            wx_icon = get_weather_icon(wx)
+            badge_bg = get_badge_bg(max_t)
+            
+            # HTML 即時氣溫與天氣標章 (DivIcon)
+            icon_html = f"""
+            <div style="
+                background: {badge_bg};
+                border: 2px solid #ffffff;
+                border-radius: 18px;
+                padding: 4px 10px;
+                color: #ffffff;
+                font-weight: 700;
+                font-size: 13px;
+                font-family: 'Segoe UI', Arial, sans-serif;
+                white-space: nowrap;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            ">
+                <span style="font-size: 15px;">{wx_icon}</span>
+                <span style="font-size: 14px;">{int(max_t)}°C</span>
+                <span style="font-size: 11px; opacity: 0.9; font-weight: normal;">{city[:2]}</span>
+            </div>
+            """
             
             popup_html = f"""
-            <div style="font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; width: 170px; color: #0f172a; padding: 4px;">
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; width: 175px; color: #0f172a; padding: 4px;">
                 <h4 style="margin: 0 0 6px 0; color: #1d4ed8; font-weight: 700;">📍 {city}</h4>
-                <div style="margin-bottom: 4px;"><b>🌤️ 天氣狀態:</b> {wx}</div>
-                <div style="margin-bottom: 4px;"><b>🌡️ 氣溫預報:</b> <span style="color:#dc2626; font-weight:bold;">{min_t}°C</span> ~ <span style="color:#b91c1c; font-weight:bold;">{max_t}°C</span></div>
+                <div style="margin-bottom: 4px;"><b>{wx_icon} 天氣狀況:</b> {wx}</div>
+                <div style="margin-bottom: 4px;"><b>🌡️ 預報氣溫:</b> <span style="color:#2563eb; font-weight:bold;">{min_t}°C</span> ~ <span style="color:#dc2626; font-weight:bold;">{max_t}°C</span></div>
                 <div><b>💧 降雨機率:</b> <span style="color:#0284c7; font-weight:bold;">{pop}%</span></div>
             </div>
             """
             
-            # 建立地標 Marker
-            folium.CircleMarker(
+            # 建立 Marker (以 DivIcon 直接顯示天氣圖標與溫度)
+            folium.Marker(
                 location=coords,
-                radius=13,
-                popup=folium.Popup(popup_html, max_width=220),
-                tooltip=f"📍 {city}: {min_t}°C ~ {max_t}°C ({wx})",
-                color="#ffffff",
-                weight=2,
-                fill=True,
-                fill_color=color,
-                fill_opacity=0.85
+                icon=folium.DivIcon(
+                    html=icon_html,
+                    icon_size=(110, 36),
+                    icon_anchor=(55, 18)
+                ),
+                popup=folium.Popup(popup_html, max_width=230),
+                tooltip=f"📍 {city}: {wx} {min_t}°C ~ {max_t}°C (降雨率 {pop}%)"
             ).add_to(m)
             
     # 加入右上方圖層切換選單 (LayerControl)
