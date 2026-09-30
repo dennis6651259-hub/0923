@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台灣氣候 AI × Data 視覺化儀表板 (GitHub Pages)</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: radial-gradient(circle at 15% 15%, #1e1b4b 0%, #0f172a 45%, #020617 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+            padding: 24px 16px;
+        }
+        .container {
+            max-width: 1240px;
+            margin: 0 auto;
+        }
+        /* Header */
+        header {
+            margin-bottom: 24px;
+            text-align: left;
+        }
+        .header-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+        }
+        .header-subtitle {
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }
+        /* Glass Cards */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.55);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.35);
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            border-color: rgba(56, 189, 248, 0.4);
+            transform: translateY(-3px);
+        }
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .metric-title {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+        .metric-primary {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+        .metric-sub {
+            font-size: 0.82rem;
+            margin-top: 6px;
+            color: #cbd5e1;
+        }
+        /* Insight Card */
+        .insight-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.8));
+            border-left: 4px solid #38bdf8;
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin-bottom: 24px;
+            font-size: 0.92rem;
+            color: #e2e8f0;
+        }
+        /* Tabs */
+        .tabs-header {
+            display: flex;
+            gap: 8px;
+            background: rgba(15, 23, 42, 0.5);
+            padding: 6px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 0.92rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        /* Map Container */
+        #map {
+            height: 520px;
+            width: 100%;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        /* Charts */
+        .chart-box {
+            width: 100%;
+            height: 440px;
+            margin-bottom: 20px;
+        }
+        /* Table */
+        .data-table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+            text-align: left;
+        }
+        th, td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        th {
+            background: rgba(15, 23, 42, 0.8);
+            color: #38bdf8;
+            font-weight: 700;
+        }
+        tr:hover {
+            background: rgba(56, 189, 248, 0.08);
+        }
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #64748b;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 class="header-title">🌤️ 台灣氣候 AI × Data 視覺化儀表板</h1>
+            <p class="header-subtitle">中央氣象署 (CWA) Open Data × 體感溫度 (Apparent Temp) 演算法 × GitHub Pages</p>
+        </header>
+
+        <!-- Metrics Grid -->
+        <div class="metrics-grid">
+            <div class="glass-card">
+                <div class="metric-title">🔥 全區最高氣溫 vs 體感</div>
+                <div class="metric-primary" style="color: #f43f5e;" id="metric-max-temp">33.0°C</div>
+                <div class="metric-sub" id="metric-max-sub">🧍 體感高溫: <strong style="color: #fb923c;">41.4°C</strong> (嘉義市)</div>
+            </div>
+            <div class="glass-card">
+                <div class="metric-title">❄️ 全區最低氣溫 vs 體感</div>
+                <div class="metric-primary" style="color: #38bdf8;" id="metric-min-temp">24.0°C</div>
+                <div class="metric-sub" id="metric-min-sub">🧍 體感低溫: <strong style="color: #7dd3fc;">27.0°C</strong> (新北市)</div>
+            </div>
+            <div class="glass-card">
+                <div class="metric-title">⚡ 最大體感與實際溫差</div>
+                <div class="metric-primary" style="color: #a855f7;" id="metric-diff">+7.0°C</div>
+                <div class="metric-sub" id="metric-diff-sub">📍 嘉義市 — 🔥 體感極悶熱</div>
+            </div>
+            <div class="glass-card">
+                <div class="metric-title">💧 平均降雨機率</div>
+                <div class="metric-primary" style="color: #34d399;" id="metric-pop">25%</div>
+                <div class="metric-sub">📊 涵蓋縣市: <strong>22 個縣市數據</strong></div>
+            </div>
+        </div>
+
+        <div class="insight-card">
+            <strong>💡 氣候體感洞察：</strong> 受空氣相對濕度與風速影響，中南部地區（如嘉義市、南投縣）體感溫度高出實測高達 <strong>+7.0°C</strong>！在外活動請注意水分補充。
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs-header">
+            <button class="tab-btn active" onclick="switchTab('tab-charts', this)">📈 實際與體感溫度對比圖</button>
+            <button class="tab-btn" onclick="switchTab('tab-map', this)">🗺️ 台灣即時天氣與體感地圖</button>
+            <button class="tab-btn" onclick="switchTab('tab-data', this)">🗄️ 全台氣象與體感數據表</button>
+        </div>
+
+        <!-- Tab 1: Charts -->
+        <div id="tab-charts" class="tab-content active">
+            <div class="glass-card">
+                <div id="chart-comparison" class="chart-box"></div>
+                <div id="chart-diff" class="chart-box"></div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Map -->
+        <div id="tab-map" class="tab-content">
+            <div class="glass-card">
+                <div id="map"></div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Data Table -->
+        <div id="tab-data" class="tab-content">
+            <div class="glass-card data-table-container">
+                <table id="weather-table">
+                    <thead>
+                        <tr>
+                            <th>縣市</th>
+                            <th>大區域</th>
+                            <th>天氣狀況</th>
+                            <th>實際最低溫 (MinT)</th>
+                            <th>實際最高溫 (MaxT)</th>
+                            <th>體感最低溫</th>
+                            <th>體感最高溫</th>
+                            <th>體感溫差 (ΔT)</th>
+                            <th>降雨機率</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <footer>
+            💡 煥哥 AI × Data 24堂課實作專案 | GitHub Pages 即時展示 | 數據源: 中央氣象署 (CWA)
+        </footer>
+    </div>
+
+    <script>
+        const weatherData = [
+            {city: '臺北市', region: '北部地區', weather: '晴時多雲', minT: 27, maxT: 32, appMin: 30.5, appMax: 36.8, diff: 4.15, pop: 20, coords: [25.0330, 121.5654]},
+            {city: '新北市', region: '北部地區', weather: '晴時多雲', minT: 24, maxT: 31, appMin: 27.0, appMax: 35.5, diff: 3.75, pop: 20, coords: [24.9157, 121.6739]},
+            {city: '基隆市', region: '北部地區', weather: '多雲短暫雨', minT: 26, maxT: 29, appMin: 28.0, appMax: 32.5, diff: 2.75, pop: 30, coords: [25.1283, 121.7419]},
+            {city: '桃園市', region: '北部地區', weather: '晴時多雲', minT: 26, maxT: 32, appMin: 29.2, appMax: 36.8, diff: 4.5, pop: 20, coords: [24.9936, 121.3010]},
+            {city: '新竹市', region: '北部地區', weather: '晴時多雲', minT: 26, maxT: 31, appMin: 29.2, appMax: 35.5, diff: 3.85, pop: 10, coords: [24.8138, 120.9675]},
+            {city: '新竹縣', region: '北部地區', weather: '晴時多雲', minT: 26, maxT: 31, appMin: 29.2, appMax: 35.5, diff: 3.85, pop: 10, coords: [24.8383, 121.0177]},
+            {city: '苗栗縣', region: '中部地區', weather: '晴時多雲', minT: 26, maxT: 32, appMin: 29.2, appMax: 36.8, diff: 4.0, pop: 10, coords: [24.5602, 120.8214]},
+            {city: '臺中市', region: '中部地區', weather: '晴時多雲', minT: 27, maxT: 33, appMin: 30.5, appMax: 38.2, diff: 4.35, pop: 10, coords: [24.1477, 120.6736]},
+            {city: '彰化縣', region: '中部地區', weather: '晴時多雲', minT: 27, maxT: 32, appMin: 30.5, appMax: 36.8, diff: 4.15, pop: 10, coords: [24.0518, 120.5161]},
+            {city: '南投縣', region: '中部地區', weather: '多雲短暫陣雨', minT: 26, maxT: 32, appMin: 29.5, appMax: 38.0, diff: 4.75, pop: 40, coords: [23.9609, 120.9719]},
+            {city: '雲林縣', region: '中部地區', weather: '晴時多雲', minT: 26, maxT: 32, appMin: 29.2, appMax: 36.8, diff: 4.0, pop: 10, coords: [23.7092, 120.4313]},
+            {city: '嘉義市', region: '南部地區', weather: '多雲午後短暫陣雨', minT: 29, maxT: 33, appMin: 34.6, appMax: 41.4, diff: 7.0, pop: 30, coords: [23.4800, 120.4491]},
+            {city: '嘉義縣', region: '南部地區', weather: '晴時多雲', minT: 29, maxT: 33, appMin: 33.0, appMax: 39.3, diff: 5.15, pop: 20, coords: [23.4588, 120.5740]},
+            {city: '臺南市', region: '南部地區', weather: '晴時多雲', minT: 27, maxT: 32, appMin: 30.2, appMax: 37.0, diff: 4.1, pop: 20, coords: [22.9997, 120.2270]},
+            {city: '高雄市', region: '南部地區', weather: '晴時多雲', minT: 28, maxT: 32, appMin: 31.8, appMax: 37.0, diff: 3.9, pop: 20, coords: [22.6273, 120.3014]},
+            {city: '屏東縣', region: '南部地區', weather: '多雲短暫陣雨', minT: 27, maxT: 33, appMin: 30.5, appMax: 38.2, diff: 4.35, pop: 30, coords: [22.5519, 120.5487]},
+            {city: '宜蘭縣', region: '東部地區', weather: '多雲短暫陣雨', minT: 26, maxT: 30, appMin: 28.5, appMax: 34.0, diff: 3.25, pop: 30, coords: [24.7570, 121.7530]},
+            {city: '花蓮縣', region: '東部地區', weather: '多雲短暫陣雨', minT: 26, maxT: 30, appMin: 28.5, appMax: 34.0, diff: 3.25, pop: 30, coords: [23.9872, 121.6015]},
+            {city: '臺東縣', region: '東部地區', weather: '多雲短暫陣雨', minT: 27, maxT: 31, appMin: 30.2, appMax: 35.5, diff: 3.85, pop: 30, coords: [22.7613, 121.1444]},
+            {city: '澎湖縣', region: '離島地區', weather: '晴時多雲', minT: 27, maxT: 30, appMin: 30.2, appMax: 34.0, diff: 3.6, pop: 10, coords: [23.5711, 119.5793]},
+            {city: '金門縣', region: '離島地區', weather: '晴時多雲', minT: 26, maxT: 31, appMin: 28.5, appMax: 35.5, diff: 3.75, pop: 10, coords: [24.4493, 118.3766]},
+            {city: '連江縣', region: '離島地區', weather: '晴時多雲', minT: 25, maxT: 29, appMin: 27.0, appMax: 32.5, diff: 3.25, pop: 10, coords: [26.1505, 119.9499]}
+        ];
+
+        // Render Table
+        const tbody = document.querySelector('#weather-table tbody');
+        weatherData.forEach(d => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${d.city}</strong></td>
+                <td>${d.region}</td>
+                <td>${d.weather}</td>
+                <td style="color:#38bdf8;">${d.minT}°C</td>
+                <td style="color:#f43f5e;">${d.maxT}°C</td>
+                <td style="color:#7dd3fc;">${d.appMin}°C</td>
+                <td style="color:#fb923c;">${d.appMax}°C</td>
+                <td style="color:#a855f7; font-weight:bold;">+${d.diff}°C</td>
+                <td style="color:#34d399;">${d.pop}%</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // Tab Switching Function
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+            if (tabId === 'tab-map' && map) {
+                setTimeout(() => map.invalidateSize(), 200);
+            }
+        }
+
+        // Render Plotly Charts
+        const cities = weatherData.map(d => d.city);
+        const maxTs = weatherData.map(d => d.maxT);
+        const appMaxTs = weatherData.map(d => d.appMax);
+        const minTs = weatherData.map(d => d.minT);
+        const diffs = weatherData.map(d => d.diff);
+
+        // Comparison Chart
+        Plotly.newPlot('chart-comparison', [
+            { x: cities, y: maxTs, name: '實際最高溫 (MaxT)', type: 'bar', marker: { color: '#f43f5e' } },
+            { x: cities, y: appMaxTs, name: '體感最高溫 (Feels Like)', type: 'bar', marker: { color: '#f97316' } },
+            { x: cities, y: minTs, name: '實際最低溫 (MinT)', type: 'bar', marker: { color: '#0284c7' } }
+        ], {
+            title: { text: '📊 各縣市實際氣溫 vs 體感氣溫對比', font: { color: '#ffffff', size: 18 } },
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(30,41,59,0.5)',
+            font: { color: '#f8fafc' },
+            barmode: 'group',
+            xaxis: { tickangle: -35 },
+            yaxis: { title: '氣溫 (°C)', gridcolor: 'rgba(255,255,255,0.08)' }
+        }, { responsive: true });
+
+        // Difference Ranking Chart
+        Plotly.newPlot('chart-diff', [
+            {
+                x: cities,
+                y: diffs,
+                type: 'bar',
+                marker: { color: diffs.map(d => d >= 5 ? '#ef4444' : d >= 3.5 ? '#f97316' : '#10b981') },
+                text: diffs.map(d => `+${d}°C`),
+                textposition: 'outside'
+            }
+        ], {
+            title: { text: '🔥 各縣市體感與實際溫差排行 (體感大幅高出實測代表濕熱感顯著)', font: { color: '#ffffff', size: 18 } },
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(30,41,59,0.5)',
+            font: { color: '#f8fafc' },
+            xaxis: { tickangle: -35 },
+            yaxis: { title: '溫差 ΔT (°C)', gridcolor: 'rgba(255,255,255,0.08)' }
+        }, { responsive: true });
+
+        // Render Leaflet Map
+        var map = L.map('map').setView([23.7, 120.95], 8);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        weatherData.forEach(d => {
+            var customIcon = L.divIcon({
+                className: 'custom-badge',
+                html: `<div style="background: linear-gradient(135deg, #ef4444, #b91c1c); border: 2px solid #fff; border-radius: 18px; padding: 4px 8px; color: #fff; font-weight: bold; font-size: 12px; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+                    ${d.maxT}°C (體感 ${parseInt(d.appMax)}°)
+                </div>`,
+                iconSize: [120, 36],
+                iconAnchor: [60, 18]
+            });
+            L.marker(d.coords, { icon: customIcon })
+                .bindPopup(`
+                    <div style="color: #0f172a; font-family: sans-serif;">
+                        <h4 style="color:#1d4ed8; margin-bottom: 4px;">📍 ${d.city}</h4>
+                        <div><b>天氣狀況:</b> ${d.weather}</div>
+                        <div><b>🌡️ 實際氣溫:</b> ${d.minT}°C ~ ${d.maxT}°C</div>
+                        <div><b>🧍 體感氣溫:</b> ${d.appMin}°C ~ ${d.appMax}°C</div>
+                        <div><b>🔥 體感溫差:</b> <span style="color:#dc2626; font-weight:bold;">+${d.diff}°C</span></div>
+                        <div><b>💧 降雨機率:</b> ${d.pop}%</div>
+                    </div>
+                `)
+                .addTo(map);
+        });
+    </script>
+</body>
+</html>
