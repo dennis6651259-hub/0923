@@ -1,9 +1,6 @@
 # 🌤️ Taiwan Weather Dashboard (台灣天氣預報儀表板)
-> AI × Data × 氣象 × 實作
+<img width="1282" height="809" alt="image" src="https://github.com/user-attachments/assets/6f3dd890-c6f9-4b5d-93e8-066a2b80afb2" />
 
-利用中央氣象署（CWA）Open Data API，結合 Python 資料處理、SQLite 資料庫與 Streamlit，打造動態互動式台灣天氣儀表板。
-
----
 
 ## 🚦 五關卡開發進度追蹤 (Five-Gate Tracker)
 
@@ -55,49 +52,3 @@
 
 ---
 
-## 🧰 技術棧
-
-| 技術 | 用途 |
-|------|------|
-| `requests` | 呼叫 CWA API 取得 JSON 預報資料 |
-| `pandas` | 資料整理、剖析、結構化與 SQL SELECT 驗證 |
-| `sqlite3` | 本地 SQLite 資料庫儲存與 SQL 查詢 (`INSERT OR REPLACE`) |
-| `streamlit` | 互動式 Web App 儀表板架構 |
-| `folium` / `streamlit-folium` | 台灣地圖動態視覺化 |
-| `plotly` | 高低溫雙軸折線圖與降雨機率圖 |
-
----
-
-## 🚀 快速開始
-
-### 1. 安裝套件
-
-```bash
-pip install -r requirements.txt
-```
-
-### 2. 執行 Gate 1 & Gate 2 流程
-
-```bash
-# 1. 抓取 API 資料
-python gate1_fetch.py
-
-# 2. 解析並寫入 SQLite 資料庫
-python gate2_database.py
-```
-
-### 3. 啟動 Web App 觀測儀表板
-
-```bash
-streamlit run app/main.py
-```
-
----
-
-## 🙌 作者
-
-學習自「煥哥」—— *技術可以解決問題，但更重要的是用技術創造更好的未來！*
-
----
-
-> **AI for Learning, AI for a Better Taiwan** 🇹🇼
