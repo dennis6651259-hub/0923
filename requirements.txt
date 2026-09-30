@@ -1,6 +1,8 @@
-requests
-pandas
-streamlit
-folium
-streamlit-folium
-plotly
+streamlit>=1.30.0
+pandas>=2.0.0
+requests>=2.28.0
+folium>=0.14.0
+streamlit-folium>=0.15.0
+plotly>=5.15.0
+urllib3>=2.0.0
+python-dotenv>=1.0.0
