@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>台灣氣候 AI × Data 視覺化儀表板 (GitHub Pages)</title>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
@@ -23,29 +26,100 @@
             background: radial-gradient(circle at 15% 15%, #1e1b4b 0%, #0f172a 45%, #020617 100%);
             color: #f8fafc;
             min-height: 100vh;
-            padding: 24px 16px;
+            padding: 16px;
         }
-        .container {
-            max-width: 1240px;
+        /* Layout Grid with Sidebar */
+        .app-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 20px;
+            max-width: 1400px;
             margin: 0 auto;
+        }
+        @media (max-width: 900px) {
+            .app-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+        /* Sidebar Styling */
+        .sidebar {
+            background: rgba(30, 41, 59, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 16px;
+            padding: 20px;
+            height: fit-content;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        .sidebar-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #38bdf8;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .sidebar-divider {
+            border: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 18px 0;
+        }
+        .status-badge {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(5, 150, 105, 0.25));
+            border: 1px solid rgba(52, 211, 153, 0.4);
+            padding: 10px 12px;
+            border-radius: 10px;
+            color: #34d399;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .filter-group {
+            margin-bottom: 14px;
+        }
+        .filter-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin-bottom: 6px;
+        }
+        .filter-group select {
+            width: 100%;
+            background: #0f172a;
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .filter-group select:focus {
+            border-color: #38bdf8;
+        }
+        /* Main Content */
+        .main-content {
+            min-width: 0;
         }
         /* Header */
         header {
-            margin-bottom: 24px;
-            text-align: left;
+            margin-bottom: 20px;
         }
         .header-title {
             font-family: 'Outfit', sans-serif;
-            font-size: 2.3rem;
+            font-size: 2.2rem;
             font-weight: 800;
             background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
         .header-subtitle {
             color: #94a3b8;
-            font-size: 0.95rem;
+            font-size: 0.92rem;
         }
         /* Glass Cards */
         .glass-card {
@@ -60,17 +134,16 @@
         }
         .glass-card:hover {
             border-color: rgba(56, 189, 248, 0.4);
-            transform: translateY(-3px);
         }
         /* Metrics Grid */
         .metrics-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 16px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
         .metric-title {
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             color: #94a3b8;
             font-weight: 600;
             text-transform: uppercase;
@@ -78,12 +151,12 @@
         }
         .metric-primary {
             font-family: 'Outfit', sans-serif;
-            font-size: 2rem;
+            font-size: 1.85rem;
             font-weight: 800;
             line-height: 1.2;
         }
         .metric-sub {
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             margin-top: 6px;
             color: #cbd5e1;
         }
@@ -93,8 +166,8 @@
             border-left: 4px solid #38bdf8;
             border-radius: 12px;
             padding: 14px 18px;
-            margin-bottom: 24px;
-            font-size: 0.92rem;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
             color: #e2e8f0;
         }
         /* Tabs */
@@ -105,15 +178,15 @@
             padding: 6px;
             border-radius: 14px;
             border: 1px solid rgba(255, 255, 255, 0.08);
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
         .tab-btn {
             background: transparent;
             border: none;
             color: #94a3b8;
-            padding: 10px 20px;
+            padding: 10px 18px;
             border-radius: 10px;
-            font-size: 0.92rem;
+            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -166,7 +239,7 @@
             background: rgba(56, 189, 248, 0.08);
         }
         footer {
-            margin-top: 40px;
+            margin-top: 30px;
             padding-top: 20px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             color: #64748b;
@@ -176,17 +249,16 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1 class="header-title">🌤️ 台灣氣候 AI × Data 視覺化儀表板</h1>
-            <p class="header-subtitle">中央氣象署 (CWA) Open Data × 體感溫度 (Apparent Temp) 演算法 × GitHub Pages</p>
-        </header>
-
-        <!-- Filter Bar -->
-        <div class="glass-card" style="margin-bottom: 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <label style="font-weight: 700; color: #38bdf8; font-size: 0.9rem;">🎯 選擇大區域：</label>
-                <select id="region-select" style="background: #0f172a; color: #f8fafc; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 8px 14px; font-size: 0.9rem; cursor: pointer;">
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-title">⚙️ 系統控制台</div>
+            <div class="status-badge">🟢 CWA API 狀態: 已連線</div>
+            <hr class="sidebar-divider">
+            <div class="sidebar-title">🎯 數據過濾器</div>
+            <div class="filter-group">
+                <label for="region-select">選擇大區域</label>
+                <select id="region-select">
                     <option value="全部地區">全部地區</option>
                     <option value="北部地區">北部地區</option>
                     <option value="中部地區">中部地區</option>
@@ -195,89 +267,97 @@
                     <option value="離島地區">離島地區</option>
                 </select>
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <label style="font-weight: 700; color: #38bdf8; font-size: 0.9rem;">🏙️ 選擇縣市：</label>
-                <select id="city-select" style="background: #0f172a; color: #f8fafc; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 8px 14px; font-size: 0.9rem; cursor: pointer;">
+            <div class="filter-group">
+                <label for="city-select">選擇縣市</label>
+                <select id="city-select">
                     <option value="全部縣市">全部縣市</option>
                 </select>
             </div>
-        </div>
+        </aside>
 
-        <!-- Metrics Grid -->
-        <div class="metrics-grid">
-            <div class="glass-card">
-                <div class="metric-title">🔥 區域最高氣溫 vs 體感</div>
-                <div class="metric-primary" style="color: #f43f5e;" id="metric-max-temp">33.0°C</div>
-                <div class="metric-sub" id="metric-max-sub">🧍 體感高溫: <strong style="color: #fb923c;">41.4°C</strong> (嘉義市)</div>
-            </div>
-            <div class="glass-card">
-                <div class="metric-title">❄️ 區域最低氣溫 vs 體感</div>
-                <div class="metric-primary" style="color: #38bdf8;" id="metric-min-temp">24.0°C</div>
-                <div class="metric-sub" id="metric-min-sub">🧍 體感低溫: <strong style="color: #7dd3fc;">27.0°C</strong> (新北市)</div>
-            </div>
-            <div class="glass-card">
-                <div class="metric-title">⚡ 最大體感與實際溫差</div>
-                <div class="metric-primary" style="color: #a855f7;" id="metric-diff">+7.0°C</div>
-                <div class="metric-sub" id="metric-diff-sub">📍 嘉義市 — 🔥 體感極悶熱</div>
-            </div>
-            <div class="glass-card">
-                <div class="metric-title">💧 平均降雨機率</div>
-                <div class="metric-primary" style="color: #34d399;" id="metric-pop">25%</div>
-                <div class="metric-sub" id="metric-rows-sub">📊 涵蓋縣市: <strong>22 個縣市數據</strong></div>
-            </div>
-        </div>
+        <!-- Main Content -->
+        <main class="main-content">
+            <header>
+                <h1 class="header-title">🌤️ 台灣氣候 AI × Data 視覺化儀表板</h1>
+                <p class="header-subtitle">中央氣象署 (CWA) Open Data × 體感溫度 (Apparent Temp) 演算法 × GitHub Pages</p>
+            </header>
 
-        <div class="insight-card" id="insight-banner">
-            <strong>💡 氣候體感洞察：</strong> 受空氣相對濕度與風速影響，中南部地區（如嘉義市、南投縣）體感溫度高出實測高達 <strong>+7.0°C</strong>！在外活動請注意水分補充。
-        </div>
-
-        <!-- Tabs -->
-        <div class="tabs-header">
-            <button class="tab-btn active" onclick="switchTab('tab-charts', this)">📈 實際與體感溫度對比圖</button>
-            <button class="tab-btn" onclick="switchTab('tab-map', this)">🗺️ 台灣即時天氣與體感地圖</button>
-            <button class="tab-btn" onclick="switchTab('tab-data', this)">🗄️ 全台氣象與體感數據表</button>
-        </div>
-
-        <!-- Tab 1: Charts -->
-        <div id="tab-charts" class="tab-content active">
-            <div class="glass-card">
-                <div id="chart-comparison" class="chart-box"></div>
-                <div id="chart-diff" class="chart-box"></div>
+            <!-- Metrics Grid -->
+            <div class="metrics-grid">
+                <div class="glass-card">
+                    <div class="metric-title">🔥 區域最高氣溫 vs 體感</div>
+                    <div class="metric-primary" style="color: #f43f5e;" id="metric-max-temp">33.0°C</div>
+                    <div class="metric-sub" id="metric-max-sub">🧍 體感高溫: <strong style="color: #fb923c;">41.4°C</strong> (嘉義市)</div>
+                </div>
+                <div class="glass-card">
+                    <div class="metric-title">❄️ 區域最低氣溫 vs 體感</div>
+                    <div class="metric-primary" style="color: #38bdf8;" id="metric-min-temp">24.0°C</div>
+                    <div class="metric-sub" id="metric-min-sub">🧍 體感低溫: <strong style="color: #7dd3fc;">27.0°C</strong> (新北市)</div>
+                </div>
+                <div class="glass-card">
+                    <div class="metric-title">⚡ 最大體感與實際溫差</div>
+                    <div class="metric-primary" style="color: #a855f7;" id="metric-diff">+7.0°C</div>
+                    <div class="metric-sub" id="metric-diff-sub">📍 嘉義市 — 🔥 體感極悶熱</div>
+                </div>
+                <div class="glass-card">
+                    <div class="metric-title">💧 平均降雨機率</div>
+                    <div class="metric-primary" style="color: #34d399;" id="metric-pop">25%</div>
+                    <div class="metric-sub" id="metric-rows-sub">📊 涵蓋縣市: <strong>22 個縣市數據</strong></div>
+                </div>
             </div>
-        </div>
 
-        <!-- Tab 2: Map -->
-        <div id="tab-map" class="tab-content">
-            <div class="glass-card">
-                <div id="map"></div>
+            <div class="insight-card" id="insight-banner">
+                <strong>💡 氣候體感洞察：</strong> 受空氣相對濕度與風速影響，中南部地區（如嘉義市、南投縣）體感溫度高出實測高達 <strong>+7.0°C</strong>！在外活動請注意水分補充。
             </div>
-        </div>
 
-        <!-- Tab 3: Data Table -->
-        <div id="tab-data" class="tab-content">
-            <div class="glass-card data-table-container">
-                <table id="weather-table">
-                    <thead>
-                        <tr>
-                            <th>縣市</th>
-                            <th>大區域</th>
-                            <th>天氣狀況</th>
-                            <th>實際最低溫 (MinT)</th>
-                            <th>實際最高溫 (MaxT)</th>
-                            <th>體感最低溫</th>
-                            <th>體感最高溫</th>
-                            <th>體感溫差 (ΔT)</th>
-                            <th>降雨機率</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
+            <!-- Tabs -->
+            <div class="tabs-header">
+                <button class="tab-btn active" onclick="switchTab('tab-charts', this)">📈 實際與體感溫度對比圖</button>
+                <button class="tab-btn" onclick="switchTab('tab-map', this)">🗺️ 台灣即時天氣與體感地圖</button>
+                <button class="tab-btn" onclick="switchTab('tab-data', this)">🗄️ 全台氣象與體感數據表</button>
             </div>
-        </div>
 
-        <footer>
-            💡 煥哥 AI × Data 24堂課實作專案 | GitHub Pages 即時展示 | 數據源: 中央氣象署 (CWA)
-        </footer>
+            <!-- Tab 1: Charts -->
+            <div id="tab-charts" class="tab-content active">
+                <div class="glass-card">
+                    <div id="chart-comparison" class="chart-box"></div>
+                    <div id="chart-diff" class="chart-box"></div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Map -->
+            <div id="tab-map" class="tab-content">
+                <div class="glass-card">
+                    <div id="map"></div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Data Table -->
+            <div id="tab-data" class="tab-content">
+                <div class="glass-card data-table-container">
+                    <table id="weather-table">
+                        <thead>
+                            <tr>
+                                <th>縣市</th>
+                                <th>大區域</th>
+                                <th>天氣狀況</th>
+                                <th>實際最低溫 (MinT)</th>
+                                <th>實際最高溫 (MaxT)</th>
+                                <th>體感最低溫</th>
+                                <th>體感最高溫</th>
+                                <th>體感溫差 (ΔT)</th>
+                                <th>降雨機率</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <footer>
+                💡 煥哥 AI × Data 24堂課實作專案 | GitHub Pages 即時展示 | 數據源: 中央氣象署 (CWA)
+            </footer>
+        </main>
     </div>
 
     <script>
@@ -318,7 +398,7 @@
         const regionSelect = document.getElementById('region-select');
         const citySelect = document.getElementById('city-select');
 
-        // Populate City Select
+        // Populate City Select Options
         function updateCityOptions() {
             const selectedRegion = regionSelect.value;
             const currentCity = citySelect.value;
