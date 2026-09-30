@@ -182,15 +182,36 @@
             <p class="header-subtitle">中央氣象署 (CWA) Open Data × 體感溫度 (Apparent Temp) 演算法 × GitHub Pages</p>
         </header>
 
+        <!-- Filter Bar -->
+        <div class="glass-card" style="margin-bottom: 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="font-weight: 700; color: #38bdf8; font-size: 0.9rem;">🎯 選擇大區域：</label>
+                <select id="region-select" style="background: #0f172a; color: #f8fafc; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 8px 14px; font-size: 0.9rem; cursor: pointer;">
+                    <option value="全部地區">全部地區</option>
+                    <option value="北部地區">北部地區</option>
+                    <option value="中部地區">中部地區</option>
+                    <option value="南部地區">南部地區</option>
+                    <option value="東部地區">東部地區</option>
+                    <option value="離島地區">離島地區</option>
+                </select>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="font-weight: 700; color: #38bdf8; font-size: 0.9rem;">🏙️ 選擇縣市：</label>
+                <select id="city-select" style="background: #0f172a; color: #f8fafc; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 8px 14px; font-size: 0.9rem; cursor: pointer;">
+                    <option value="全部縣市">全部縣市</option>
+                </select>
+            </div>
+        </div>
+
         <!-- Metrics Grid -->
         <div class="metrics-grid">
             <div class="glass-card">
-                <div class="metric-title">🔥 全區最高氣溫 vs 體感</div>
+                <div class="metric-title">🔥 區域最高氣溫 vs 體感</div>
                 <div class="metric-primary" style="color: #f43f5e;" id="metric-max-temp">33.0°C</div>
                 <div class="metric-sub" id="metric-max-sub">🧍 體感高溫: <strong style="color: #fb923c;">41.4°C</strong> (嘉義市)</div>
             </div>
             <div class="glass-card">
-                <div class="metric-title">❄️ 全區最低氣溫 vs 體感</div>
+                <div class="metric-title">❄️ 區域最低氣溫 vs 體感</div>
                 <div class="metric-primary" style="color: #38bdf8;" id="metric-min-temp">24.0°C</div>
                 <div class="metric-sub" id="metric-min-sub">🧍 體感低溫: <strong style="color: #7dd3fc;">27.0°C</strong> (新北市)</div>
             </div>
@@ -202,11 +223,11 @@
             <div class="glass-card">
                 <div class="metric-title">💧 平均降雨機率</div>
                 <div class="metric-primary" style="color: #34d399;" id="metric-pop">25%</div>
-                <div class="metric-sub">📊 涵蓋縣市: <strong>22 個縣市數據</strong></div>
+                <div class="metric-sub" id="metric-rows-sub">📊 涵蓋縣市: <strong>22 個縣市數據</strong></div>
             </div>
         </div>
 
-        <div class="insight-card">
+        <div class="insight-card" id="insight-banner">
             <strong>💡 氣候體感洞察：</strong> 受空氣相對濕度與風速影響，中南部地區（如嘉義市、南投縣）體感溫度高出實測高達 <strong>+7.0°C</strong>！在外活動請注意水分補充。
         </div>
 
@@ -285,25 +306,174 @@
             {city: '連江縣', region: '離島地區', weather: '晴時多雲', minT: 25, maxT: 29, appMin: 27.0, appMax: 32.5, diff: 3.25, pop: 10, coords: [26.1505, 119.9499]}
         ];
 
-        // Render Table
-        const tbody = document.querySelector('#weather-table tbody');
-        weatherData.forEach(d => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><strong>${d.city}</strong></td>
-                <td>${d.region}</td>
-                <td>${d.weather}</td>
-                <td style="color:#38bdf8;">${d.minT}°C</td>
-                <td style="color:#f43f5e;">${d.maxT}°C</td>
-                <td style="color:#7dd3fc;">${d.appMin}°C</td>
-                <td style="color:#fb923c;">${d.appMax}°C</td>
-                <td style="color:#a855f7; font-weight:bold;">+${d.diff}°C</td>
-                <td style="color:#34d399;">${d.pop}%</td>
-            `;
-            tbody.appendChild(tr);
-        });
+        // Global Map Variable
+        var map = L.map('map').setView([23.7, 120.95], 8);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
 
-        // Tab Switching Function
+        var markersGroup = L.layerGroup().addTo(map);
+
+        // Elements
+        const regionSelect = document.getElementById('region-select');
+        const citySelect = document.getElementById('city-select');
+
+        // Populate City Select
+        function updateCityOptions() {
+            const selectedRegion = regionSelect.value;
+            const currentCity = citySelect.value;
+            citySelect.innerHTML = '<option value="全部縣市">全部縣市</option>';
+
+            const filtered = selectedRegion === '全部地區' 
+                ? weatherData 
+                : weatherData.filter(d => d.region === selectedRegion);
+
+            filtered.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.city;
+                opt.textContent = d.city;
+                citySelect.appendChild(opt);
+            });
+
+            if (Array.from(citySelect.options).some(o => o.value === currentCity)) {
+                citySelect.value = currentCity;
+            } else {
+                citySelect.value = '全部縣市';
+            }
+        }
+
+        // Render Dashboard Content based on Filters
+        function updateDashboard() {
+            const selectedRegion = regionSelect.value;
+            const selectedCity = citySelect.value;
+
+            let filtered = weatherData;
+            if (selectedRegion !== '全部地區') {
+                filtered = filtered.filter(d => d.region === selectedRegion);
+            }
+            if (selectedCity !== '全部縣市') {
+                filtered = filtered.filter(d => d.city === selectedCity);
+            }
+
+            if (filtered.length === 0) filtered = weatherData;
+
+            // Update Metrics
+            const maxRow = filtered.reduce((prev, curr) => (curr.maxT > prev.maxT) ? curr : prev, filtered[0]);
+            const minRow = filtered.reduce((prev, curr) => (curr.minT < prev.minT) ? curr : prev, filtered[0]);
+            const diffRow = filtered.reduce((prev, curr) => (curr.diff > prev.diff) ? curr : prev, filtered[0]);
+            const avgPop = Math.round(filtered.reduce((sum, curr) => sum + curr.pop, 0) / filtered.length);
+
+            document.getElementById('metric-max-temp').textContent = `${maxRow.maxT}°C`;
+            document.getElementById('metric-max-sub').innerHTML = `🧍 體感高溫: <strong style="color: #fb923c;">${maxRow.appMax}°C</strong> (${maxRow.city})`;
+            
+            document.getElementById('metric-min-temp').textContent = `${minRow.minT}°C`;
+            document.getElementById('metric-min-sub').innerHTML = `🧍 體感低溫: <strong style="color: #7dd3fc;">${minRow.appMin}°C</strong> (${minRow.city})`;
+
+            document.getElementById('metric-diff').textContent = `+${diffRow.diff}°C`;
+            document.getElementById('metric-diff-sub').innerHTML = `📍 ${diffRow.city} — 🔥 體感極悶熱`;
+
+            document.getElementById('metric-pop').textContent = `${avgPop}%`;
+            document.getElementById('metric-rows-sub').innerHTML = `📊 涵蓋縣市: <strong>${filtered.length} 個縣市數據</strong>`;
+
+            // Insight Banner
+            document.getElementById('insight-banner').innerHTML = `
+                <strong>💡 氣候體感洞察：</strong> 當前選取條件 [<strong>${selectedRegion} / ${selectedCity}</strong>] 之中，
+                <strong>${diffRow.city}</strong> 體感與實際溫差最大（高出 <strong>+${diffRow.diff}°C</strong>）。在外活動請注意調配水分與穿著！
+            `;
+
+            // Update Table
+            const tbody = document.querySelector('#weather-table tbody');
+            tbody.innerHTML = '';
+            filtered.forEach(d => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${d.city}</strong></td>
+                    <td>${d.region}</td>
+                    <td>${d.weather}</td>
+                    <td style="color:#38bdf8;">${d.minT}°C</td>
+                    <td style="color:#f43f5e;">${d.maxT}°C</td>
+                    <td style="color:#7dd3fc;">${d.appMin}°C</td>
+                    <td style="color:#fb923c;">${d.appMax}°C</td>
+                    <td style="color:#a855f7; font-weight:bold;">+${d.diff}°C</td>
+                    <td style="color:#34d399;">${d.pop}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Update Charts
+            const cities = filtered.map(d => d.city);
+            const maxTs = filtered.map(d => d.maxT);
+            const appMaxTs = filtered.map(d => d.appMax);
+            const minTs = filtered.map(d => d.minT);
+            const diffs = filtered.map(d => d.diff);
+
+            Plotly.react('chart-comparison', [
+                { x: cities, y: maxTs, name: '實際最高溫 (MaxT)', type: 'bar', marker: { color: '#f43f5e' } },
+                { x: cities, y: appMaxTs, name: '體感最高溫 (Feels Like)', type: 'bar', marker: { color: '#f97316' } },
+                { x: cities, y: minTs, name: '實際最低溫 (MinT)', type: 'bar', marker: { color: '#0284c7' } }
+            ], {
+                title: { text: `📊 [${selectedRegion} / ${selectedCity}] 實際氣溫 vs 體感氣溫對比`, font: { color: '#ffffff', size: 18 } },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(30,41,59,0.5)',
+                font: { color: '#f8fafc' },
+                barmode: 'group',
+                xaxis: { tickangle: -35 },
+                yaxis: { title: '氣溫 (°C)', gridcolor: 'rgba(255,255,255,0.08)' }
+            }, { responsive: true });
+
+            Plotly.react('chart-diff', [
+                {
+                    x: cities,
+                    y: diffs,
+                    type: 'bar',
+                    marker: { color: diffs.map(d => d >= 5 ? '#ef4444' : d >= 3.5 ? '#f97316' : '#10b981') },
+                    text: diffs.map(d => `+${d}°C`),
+                    textposition: 'outside'
+                }
+            ], {
+                title: { text: `🔥 [${selectedRegion} / ${selectedCity}] 體感與實際溫差排行`, font: { color: '#ffffff', size: 18 } },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(30,41,59,0.5)',
+                font: { color: '#f8fafc' },
+                xaxis: { tickangle: -35 },
+                yaxis: { title: '溫差 ΔT (°C)', gridcolor: 'rgba(255,255,255,0.08)' }
+            }, { responsive: true });
+
+            // Update Map Markers
+            markersGroup.clearLayers();
+            const bounds = [];
+            filtered.forEach(d => {
+                bounds.push(d.coords);
+                var customIcon = L.divIcon({
+                    className: 'custom-badge',
+                    html: `<div style="background: linear-gradient(135deg, #ef4444, #b91c1c); border: 2px solid #fff; border-radius: 18px; padding: 4px 8px; color: #fff; font-weight: bold; font-size: 12px; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+                        ${d.maxT}°C (體感 ${parseInt(d.appMax)}°)
+                    </div>`,
+                    iconSize: [120, 36],
+                    iconAnchor: [60, 18]
+                });
+                L.marker(d.coords, { icon: customIcon })
+                    .bindPopup(`
+                        <div style="color: #0f172a; font-family: sans-serif;">
+                            <h4 style="color:#1d4ed8; margin-bottom: 4px;">📍 ${d.city}</h4>
+                            <div><b>天氣狀況:</b> ${d.weather}</div>
+                            <div><b>🌡️ 實際氣溫:</b> ${d.minT}°C ~ ${d.maxT}°C</div>
+                            <div><b>🧍 體感氣溫:</b> ${d.appMin}°C ~ ${d.appMax}°C</div>
+                            <div><b>🔥 體感溫差:</b> <span style="color:#dc2626; font-weight:bold;">+${d.diff}°C</span></div>
+                            <div><b>💧 降雨機率:</b> ${d.pop}%</div>
+                        </div>
+                    `)
+                    .addTo(markersGroup);
+            });
+
+            if (bounds.length > 0 && selectedRegion !== '全部地區') {
+                map.fitBounds(bounds, { padding: [50, 50], maxZoom: 10 });
+            } else if (selectedRegion === '全部地區') {
+                map.setView([23.7, 120.95], 8);
+            }
+        }
+
+        // Tab Switching
         function switchTab(tabId, btn) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -314,75 +484,19 @@
             }
         }
 
-        // Render Plotly Charts
-        const cities = weatherData.map(d => d.city);
-        const maxTs = weatherData.map(d => d.maxT);
-        const appMaxTs = weatherData.map(d => d.appMax);
-        const minTs = weatherData.map(d => d.minT);
-        const diffs = weatherData.map(d => d.diff);
-
-        // Comparison Chart
-        Plotly.newPlot('chart-comparison', [
-            { x: cities, y: maxTs, name: '實際最高溫 (MaxT)', type: 'bar', marker: { color: '#f43f5e' } },
-            { x: cities, y: appMaxTs, name: '體感最高溫 (Feels Like)', type: 'bar', marker: { color: '#f97316' } },
-            { x: cities, y: minTs, name: '實際最低溫 (MinT)', type: 'bar', marker: { color: '#0284c7' } }
-        ], {
-            title: { text: '📊 各縣市實際氣溫 vs 體感氣溫對比', font: { color: '#ffffff', size: 18 } },
-            paper_bgcolor: 'rgba(0,0,0,0)',
-            plot_bgcolor: 'rgba(30,41,59,0.5)',
-            font: { color: '#f8fafc' },
-            barmode: 'group',
-            xaxis: { tickangle: -35 },
-            yaxis: { title: '氣溫 (°C)', gridcolor: 'rgba(255,255,255,0.08)' }
-        }, { responsive: true });
-
-        // Difference Ranking Chart
-        Plotly.newPlot('chart-diff', [
-            {
-                x: cities,
-                y: diffs,
-                type: 'bar',
-                marker: { color: diffs.map(d => d >= 5 ? '#ef4444' : d >= 3.5 ? '#f97316' : '#10b981') },
-                text: diffs.map(d => `+${d}°C`),
-                textposition: 'outside'
-            }
-        ], {
-            title: { text: '🔥 各縣市體感與實際溫差排行 (體感大幅高出實測代表濕熱感顯著)', font: { color: '#ffffff', size: 18 } },
-            paper_bgcolor: 'rgba(0,0,0,0)',
-            plot_bgcolor: 'rgba(30,41,59,0.5)',
-            font: { color: '#f8fafc' },
-            xaxis: { tickangle: -35 },
-            yaxis: { title: '溫差 ΔT (°C)', gridcolor: 'rgba(255,255,255,0.08)' }
-        }, { responsive: true });
-
-        // Render Leaflet Map
-        var map = L.map('map').setView([23.7, 120.95], 8);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-
-        weatherData.forEach(d => {
-            var customIcon = L.divIcon({
-                className: 'custom-badge',
-                html: `<div style="background: linear-gradient(135deg, #ef4444, #b91c1c); border: 2px solid #fff; border-radius: 18px; padding: 4px 8px; color: #fff; font-weight: bold; font-size: 12px; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
-                    ${d.maxT}°C (體感 ${parseInt(d.appMax)}°)
-                </div>`,
-                iconSize: [120, 36],
-                iconAnchor: [60, 18]
-            });
-            L.marker(d.coords, { icon: customIcon })
-                .bindPopup(`
-                    <div style="color: #0f172a; font-family: sans-serif;">
-                        <h4 style="color:#1d4ed8; margin-bottom: 4px;">📍 ${d.city}</h4>
-                        <div><b>天氣狀況:</b> ${d.weather}</div>
-                        <div><b>🌡️ 實際氣溫:</b> ${d.minT}°C ~ ${d.maxT}°C</div>
-                        <div><b>🧍 體感氣溫:</b> ${d.appMin}°C ~ ${d.appMax}°C</div>
-                        <div><b>🔥 體感溫差:</b> <span style="color:#dc2626; font-weight:bold;">+${d.diff}°C</span></div>
-                        <div><b>💧 降雨機率:</b> ${d.pop}%</div>
-                    </div>
-                `)
-                .addTo(map);
+        // Event Listeners
+        regionSelect.addEventListener('change', () => {
+            updateCityOptions();
+            updateDashboard();
         });
+
+        citySelect.addEventListener('change', () => {
+            updateDashboard();
+        });
+
+        // Init
+        updateCityOptions();
+        updateDashboard();
     </script>
 </body>
 </html>
