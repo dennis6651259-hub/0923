@@ -1,0 +1,7 @@
+# Git 忽略項目
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.db
+.streamlit/secrets.toml
